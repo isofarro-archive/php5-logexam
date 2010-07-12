@@ -1,0 +1,8 @@
+
+# Ignore editing backups
+*~
+
+# Ignore data directory
+data/*
+
+
