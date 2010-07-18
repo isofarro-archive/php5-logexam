@@ -48,6 +48,7 @@ class LogExaminer {
 	public function parse($line) {
 		$components = (object)NULL;
 		if (preg_match("/^(\d+\.\d+\.\d+\.\d+) - - \[(\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}) ([^\]]+)\] \"(\w+) ([^ ]+) (HTTP\/1\.\d)\" (\d+) (\d+) \"([^\"]+)\" \"([^\"]+)\"/", $line, $matches)) {
+			## Apache combined log format
 			//print_r($matches);
 			$components->ipAddress = $matches[1];
 			$components->date      = $matches[2];
