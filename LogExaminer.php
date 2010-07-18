@@ -23,31 +23,63 @@ class LogExaminer {
 		if ($file && is_resource($file)) {
 			echo "INFO: Processing input stream\n";
 			
-			$count = 0;
-			$pages = 0;
+			$lineno  = 0;
+			$entries = 0;
+			$count   = 0;
 			
 			while ($line = fgets($file, 4096)) {
+				$lineno++;
 				$count++;
-				//printf("%04d: ", $count);
 				//echo $line;
 				
 				$entry = $this->parse($line);
+				if (empty($entry)) {
+					printf("ERROR line %04d: %s", $count, $line);
+				}
+				elseif($this->is_acceptable($entry)) {
+					$this->add($entry);
+					$entries++;
+				}
 				//print_r($entry);
-				$this->add($entry);
 				
 				if ($count>1000) {
-					echo '.'; $count=0; $pages++;
+					echo '.'; $count=0;
 					//break;
 				}
 			}
 		}
 		
-		echo "\nAdded ", ($pages * 1000) + $count, " entries\n";
+		echo "\nAdded $entries entries from $lineno lines\n";
 		
 
 		if ($filename && is_resource($file)) {
 			fclose($file);
 		}
+	}
+	
+	public function is_acceptable($entry) {
+		// TODO: Convert into an event listener based approach
+		if (preg_match('/\.(\w+)$/', $entry->url, $matches)) {
+			$extension = strtolower($matches[1]);
+			switch($extension) {
+				case 'css':
+				case 'js':
+				case 'gif':
+				case 'jpg':
+				case 'jpeg':
+				case 'png':
+				case 'ico':
+				case 'bmp':
+				case 'swf':
+					return false; break;
+				case 'rdf':
+				case 'necho':
+				case 'atom':
+				case 'rss':
+					return false; break;
+			}
+		}
+		return true;
 	}
 	
 	public function add($entry) {
