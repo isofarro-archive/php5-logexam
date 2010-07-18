@@ -1,51 +1,7 @@
 <?php
 
+require_once dirname(__FILE__) . '/LogFileHandler.php';
 require_once dirname(__FILE__) . '/LogExaminer.php';
-
-interface InputHandle {
-	function open($name, $mode='r');
-	function close(); 
-}
-
-class FileHandle implements InputHandle {
-	var $handle;
-	
-	public function open($name, $mode='r') {
-		$this->handle = fopen($name, $mode);
-	}
-	
-	public function getHandle() {
-		return $this->handle;
-	}
-	
-	public function close() {
-		fclose($this->handle);
-	}
-}
-
-class GzipPipeHandle implements InputHandle {
-	var $handle;
-	var $filename;
-	var $pipename;
-
-	public function open($name, $mode='r') {
-		$this->filename = $name;
-		$this->pipename = '/tmp/' . basename($name) . '-PIPE';
-		$cmd    = "gzip -cd $this->filename";
-		//echo "\nRunning command: $cmd\n";
-		$this->handle = popen($cmd, $mode);
-	}
-	
-	public function getHandle() {
-		return $this->handle;
-	}
-
-	public function close() {
-		pclose($this->handle);
-	}
-}
-
-
 
 //print_r($argv);
 
@@ -60,15 +16,15 @@ for($i=1; $i<$filelen; $i++) {
 	$filename = $argv[$i];
 	if (is_file($filename)) {
 		$logfile = '';
-		echo "Processing $filename:";
+		echo "Processing $filename: ";
 		
 		if (preg_match('/\.gz$/', $filename)) {
 			echo 'Z';
-			$h = new GzipPipeHandle();
+			$h = new GzipLogFileHandle();
 		}
 		else {
 			echo 'F';
-			$h = new FileHandle();
+			$h = new LogFileHandle();
 		}
 
 
