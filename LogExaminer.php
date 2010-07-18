@@ -2,6 +2,7 @@
 
 class LogExaminer {
 	var $dataset;
+	var $datasource;
 	var $filters;
 	
 	public function __construct($dataset) {
@@ -23,43 +24,54 @@ class LogExaminer {
 			echo "INFO: Processing input stream\n";
 			
 			$count = 0;
+			$pages = 0;
 			
 			while ($line = fgets($file, 4096)) {
 				$count++;
-				printf("%04d: ", $count);
-				echo $line;
+				//printf("%04d: ", $count);
+				//echo $line;
 				
-				$components = $this->parse($line);
-				print_r($components);
+				$entry = $this->parse($line);
+				//print_r($entry);
+				$this->add($entry);
 				
-				if ($count>1) {
-					break;
+				if ($count>1000) {
+					echo '.'; $count=0; $pages++;
+					//break;
 				}
 			}
 		}
 		
+		echo "\nAdded ", ($pages * 1000) + $count, " entries\n";
+		
 
-		if ($filename && is_resouce($file)) {
+		if ($filename && is_resource($file)) {
 			fclose($file);
 		}
 	}
 	
+	public function add($entry) {
+		$this->datasource->add($entry);
+	}
 	
 	public function parse($line) {
 		$components = (object)NULL;
-		if (preg_match("/^(\d+\.\d+\.\d+\.\d+) - - \[(\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}) ([^\]]+)\] \"(\w+) ([^ ]+) (HTTP\/1\.\d)\" (\d+) (\d+) \"([^\"]+)\" \"([^\"]+)\"/", $line, $matches)) {
+		if (preg_match("/^(\d+\.\d+\.\d+\.\d+) ([^\s]+) ([^\s]+) \[(\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}) ([^\]]+)\] \"(\w+) ([^ ]+) (HTTP\/1\.\d)\" (\d+) (\d+|-) \"([^\"]*)\" \"([^\"]+)\"/", $line, $matches)) {
 			## Apache combined log format
 			//print_r($matches);
 			$components->ipAddress = $matches[1];
-			$components->date      = $matches[2];
-			$components->timezone  = $matches[3];
-			$components->method    = $matches[4];
-			$components->url       = $matches[5];
-			$components->version   = $matches[6];
-			$components->status    = $matches[7];
-			$components->length    = $matches[8];
-			$components->referrer  = $matches[9];
-			$components->userAgent = $matches[10];
+			$components->date      = $matches[4];
+			$components->timezone  = $matches[5];
+			$components->method    = $matches[6];
+			$components->url       = $matches[7];
+			$components->http      = $matches[8];
+			$components->status    = $matches[9];
+			$components->length    = $matches[10];
+			$components->referrer  = $matches[11];
+			$components->userAgent = $matches[12];
+		}
+		else {
+			echo "\n{$line}\n";
 		}
 		return $components;
 	}
@@ -69,7 +81,8 @@ class LogExaminer {
 	}
 	
 	protected function _setDataset($dataset) {
-		$this->dataset = $dataset;
+		$this->dataset    = $dataset;
+		$this->datasource = new LogStore($dataset);
 	}
 	
 }

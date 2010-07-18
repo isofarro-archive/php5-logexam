@@ -1,5 +1,6 @@
 <?php
 
+require_once dirname(__FILE__) . '/LogStore.php';
 require_once dirname(__FILE__) . '/LogExaminer.php';
 
 print_r($argv);
@@ -13,14 +14,15 @@ $dataset = $argv[1];
 $logexam = new LogExaminer($dataset);
 
 if ($argv[2]) {
+	$filename = $argv[2];
 	echo "INFO: Importing file: {$filename}\n";
 	$logexam->import($filename);
 }
-else {
-	echo "Reading from standard input\n";
-	// Streaming in from STDIN
-	$logexam->import(STDIN);
-}
+//else {
+//	echo "Reading from standard input\n";
+//	// Streaming in from STDIN
+//	$logexam->import(STDIN);
+//}
 
 
 function _exit_usage() {
