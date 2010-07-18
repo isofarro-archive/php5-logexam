@@ -3,7 +3,7 @@
 require_once dirname(__FILE__) . '/LogStore.php';
 require_once dirname(__FILE__) . '/LogExaminer.php';
 
-print_r($argv);
+//print_r($argv);
 
 if (!$argv[1]) { 
 	exit_usage();
@@ -12,17 +12,18 @@ if (!$argv[1]) {
 
 $dataset = $argv[1];
 $logexam = new LogExaminer($dataset);
+// TODO: Set filters and other listeners here
 
 if ($argv[2]) {
-	$filename = $argv[2];
-	echo "INFO: Importing file: {$filename}\n";
-	$logexam->import($filename);
+	echo "Reading list of files\n";
+	$filenames = array_slice($argv, 2);
+	$logexam->import($filenames);
 }
-//else {
-//	echo "Reading from standard input\n";
-//	// Streaming in from STDIN
-//	$logexam->import(STDIN);
-//}
+else {
+	echo "Reading from standard input\n";
+	// Streaming in from STDIN
+	$logexam->importFile(STDIN);
+}
 
 
 function _exit_usage() {

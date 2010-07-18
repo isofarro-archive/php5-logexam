@@ -12,7 +12,10 @@ Example code
 
 ### 1.1. Command line
 
-	$ zcat /etc/apache2/logs/access.logs.1.gz | cli_import.php 'example-dataset'
+	$ php ./cli_import 'example-dataset' data/access-log.2 data/access-log.3.gz
+
+#### 1.1.2. Deprecated Command line calls
+	$ zcat /etc/apache2/logs/access.logs.1.gz | php cli_import.php 'example-dataset'
 	$ cat ./data/access.log.3 | php ./cli_import.php 'example-dataset'
 
 

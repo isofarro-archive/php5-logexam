@@ -9,19 +9,28 @@ class LogExaminer {
 		$this->_setDataset($dataset);
 	}
 	
-	public function import($file, $filter=NULL) {
-		$filename = NULL;
+	public function import($filenames, $filter=NULL) {
+		//print_r($filenames); 
+		foreach($filenames as $filename) {
+			$this->importFile($filename, $filter);
+		}
+		return;
+	}
+		
+	public function importFile($file, $filter=NULL) {
+		$filename = 'STDIN';
 		if ($filter) {
 			$this->setFilter($filter);
 		}
 		
 		if (is_string($file) && is_file($file)) {
 			$filename = $file;
+			// TODO: Call a LogFileHandler Factory method to get a resource object
 			$file = fopen($filename, 'r');
 		}
 		
 		if ($file && is_resource($file)) {
-			echo "INFO: Processing input stream\n";
+			echo "Importing {$filename}\n";
 			
 			$lineno  = 0;
 			$entries = 0;
@@ -48,9 +57,11 @@ class LogExaminer {
 				}
 			}
 		}
+		else {
+			echo "Not a valid file handle";
+		}
 		
 		echo "\nAdded $entries entries from $lineno lines\n";
-		
 
 		if ($filename && is_resource($file)) {
 			fclose($file);
