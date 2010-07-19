@@ -51,9 +51,12 @@ class LogExaminer {
 				}
 				//print_r($entry);
 				
+				//if ($count>2) {
+				//	break;
+				//}
+				
 				if ($count>1000) {
 					echo '.'; $count=0;
-					//break;
 				}
 			}
 		}
