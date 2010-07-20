@@ -42,8 +42,8 @@ class LogExaminer {
 				//echo $line;
 				
 				$entry = $this->parse($line);
-				if (empty($entry)) {
-					printf("ERROR line %04d: %s", $count, $line);
+				if (empty($entry->url)) {
+					printf("\nERROR line %08d: %s", $lineno, $line);
 				}
 				elseif($this->is_acceptable($entry)) {
 					$this->add($entry);
@@ -117,7 +117,7 @@ class LogExaminer {
 			$components->userAgent = $matches[12];
 		}
 		else {
-			echo "\n{$line}\n";
+			//echo "\n{$line}\n";
 		}
 		return $components;
 	}
