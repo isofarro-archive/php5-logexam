@@ -1,6 +1,7 @@
 <?php
 
 require_once dirname(__FILE__) . '/LogStore.php';
+require_once dirname(__FILE__) . '/LogFileHandler.php';
 require_once dirname(__FILE__) . '/LogExaminer.php';
 
 //print_r($argv);

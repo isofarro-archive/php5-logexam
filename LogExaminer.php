@@ -25,18 +25,20 @@ class LogExaminer {
 		
 		if (is_string($file) && is_file($file)) {
 			$filename = $file;
-			// TODO: Call a LogFileHandler Factory method to get a resource object
-			$file = fopen($filename, 'r');
+			$handle = new LogFileHandle();
+
+			$handle->open($filename, 'r');
+			$fh = $handle->getHandle();
 		}
 		
-		if ($file && is_resource($file)) {
+		if ($fh && is_resource($fh)) {
 			echo "Importing {$filename}\n";
 			
 			$lineno  = 0;
 			$entries = 0;
 			$count   = 0;
 			
-			while ($line = fgets($file, 4096)) {
+			while ($line = fgets($fh, 4096)) {
 				$lineno++;
 				$count++;
 				//echo $line;
@@ -66,8 +68,8 @@ class LogExaminer {
 		
 		echo "\nAdded $entries entries from $lineno lines\n";
 
-		if ($filename && is_resource($file)) {
-			fclose($file);
+		if ($fh && is_resource($fh)) {
+			$handle->close();
 		}
 	}
 	
