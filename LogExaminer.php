@@ -25,20 +25,26 @@ class LogExaminer {
 		
 		if (is_string($file) && is_file($file)) {
 			$filename = $file;
-			$handle = new LogFileHandle();
+			
+			if (preg_match('/\.gz$/', $filename)) {
+				$handle = new GzipLogFileHandle();
+			}
+			else {
+				$handle = new LogFileHandle();
+			}
 
 			$handle->open($filename, 'r');
-			$fh = $handle->getHandle();
+			$file = $handle->getHandle();
 		}
 		
-		if ($fh && is_resource($fh)) {
+		if ($file && is_resource($file)) {
 			echo "Importing {$filename}\n";
 			
 			$lineno  = 0;
 			$entries = 0;
 			$count   = 0;
 			
-			while ($line = fgets($fh, 4096)) {
+			while ($line = fgets($file, 4096)) {
 				$lineno++;
 				$count++;
 				//echo $line;
@@ -68,7 +74,7 @@ class LogExaminer {
 		
 		echo "\nAdded $entries entries from $lineno lines\n";
 
-		if ($fh && is_resource($fh)) {
+		if ($file && is_resource($file)) {
 			$handle->close();
 		}
 	}
