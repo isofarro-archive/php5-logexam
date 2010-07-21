@@ -44,7 +44,7 @@ class LogExaminer {
 			$entries = 0;
 			$count   = 0;
 			
-			while ($line = fgets($file, 4096)) {
+			while ($line = fgets($file, 8192)) {
 				$lineno++;
 				$count++;
 				//echo $line;
@@ -110,7 +110,7 @@ class LogExaminer {
 	
 	public function parse($line) {
 		$components = (object)NULL;
-		if (preg_match("/^(\d+\.\d+\.\d+\.\d+) ([^\s]+) ([^\s]+) \[(\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}) ([^\]]+)\] \"(\w+) ([^ ]+) (HTTP\/1\.\d)\" (\d+) (\d+|-) \"([^\"]*)\" \"([^\"]+)\"/", $line, $matches)) {
+		if (preg_match("/^(\d+\.\d+\.\d+\.\d+) (\S+) (\S+) \[(\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}) ([^\]]+)\] \"(\w+) (.+) (HTTP\/1\.\d+)\" (\d+) (\d+|-) \"([^\"]*)\" \"([^\"]*)\"/", $line, $matches)) {
 			## Apache combined log format
 			//print_r($matches);
 			$components->ipAddress = $matches[1];
