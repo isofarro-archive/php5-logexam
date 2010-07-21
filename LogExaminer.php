@@ -74,7 +74,7 @@ class LogExaminer {
 		
 		echo "\nAdded $entries entries from $lineno lines\n";
 
-		if ($file && is_resource($file)) {
+		if ($handle && is_resource($file)) {
 			$handle->close();
 		}
 	}
