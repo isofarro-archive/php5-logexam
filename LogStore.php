@@ -36,6 +36,8 @@ class LogStore {
 		
 		$ipAddressId = $this->getIpAddressId($entry->ipAddress);
 		//echo "DEBUG: IP Address Id: $ipAddressId\n";
+		$urlId 			 = $this->getUrlId($entry->url);
+		//echo "DEBUG: URL id: $urlId\n";
 
 
 		$stm = $this->_prepareStatement('entry', 'insert');
@@ -44,7 +46,7 @@ class LogStore {
 			':date'				=> $entry->date,
 			':timezone'		=> $entry->timezone,
 			':method'			=> $entry->method,
-			':url'				=> $entry->url,
+			':url_id' 		=> $urlId,
 			':http' 			=> $entry->http,
 			':status' 		=> $entry->status,
 			':length' 		=> $entry->length,
@@ -68,6 +70,21 @@ class LogStore {
 			return $this->_db->lastInsertId();
 		}
 	}
+
+	public function getUrlId($url) {
+		$params = array(':url' => $url);
+		$row = $this->_getOneRow('urls', 'getByUrl', $params);
+		
+		if ($row) {
+			return $row->id;
+		}
+		else {
+			$stm = $this->_prepareStatement('urls', 'insert');
+			$stm->execute($params);
+			return $this->_db->lastInsertId();
+		}
+	}
+
 	
 	##
 	## Private methods - orm helper methods
@@ -247,11 +264,11 @@ class LogStore {
 
 			$schema['entry']['create'] = <<<SQL
 CREATE TABLE IF NOT EXISTS `log_entry` (
-	ip_id				INTEGER,
+	ip_id				INTEGER NOT NULL,
 	date				DATETIME NOT NULL,
 	timezone		VARCHAR(5),
 	method			VARCHAR(8) NOT NULL,
-	url					VARCHAR(255) NOT NULL,
+	url_id			INTEGER NOT NULL,
 	http				VARCHAR(8),
 	status			INTEGER,
 	length			INTEGER,
@@ -260,14 +277,16 @@ CREATE TABLE IF NOT EXISTS `log_entry` (
 	
 	FOREIGN KEY (ip_id) REFERENCES `ip_address` (id)
 		ON DELETE CASCADE
+	FOREIGN KEY (url_id) REFERENCES `urls` (id)
+		ON DELETE CASCADE
 );
 SQL;
 
 		$schema['entry']['insert'] = <<<SQL
 INSERT INTO `log_entry`
-(ip_id, date, timezone, method, url, http, status, length, referrer, user_agent)
+(ip_id, date, timezone, method, url_id, http, status, length, referrer, user_agent)
 VALUES
-(:ip_id, :date, :timezone, :method, :url, :http, :status, :length, :referrer, :user_agent)
+(:ip_id, :date, :timezone, :method, :url_id, :http, :status, :length, :referrer, :user_agent)
 SQL;
 
 		/******************************************************************
@@ -299,7 +318,34 @@ FROM `ip_address`
 WHERE address = :address ;
 SQL;
 
+	/******************************************************************
+	*
+	* IP Address table
+	*
+	******************************************************************/
+		$schema['urls']['cache_by'] = array('id', 'url');
+		$schema['urls']['create']   = <<<SQL
+CREATE TABLE IF NOT EXISTS `urls` (
+	id			INTEGER PRIMARY KEY,
+	url			VARCHAR(255) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS `urls_index1`
+	ON `urls` (url);
+SQL;
 
+
+		$schema['urls']['insert'] = <<<SQL
+INSERT OR IGNORE INTO `urls`
+(id, url)
+VALUES
+(NULL, :url)
+SQL;
+
+		$schema['urls']['getByUrl'] = <<<SQL
+SELECT id, url
+FROM `urls`
+WHERE url = :url ;
+SQL;
 
 
 		return $schema;
