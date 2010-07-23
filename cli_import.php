@@ -4,6 +4,8 @@ require_once dirname(__FILE__) . '/LogStore.php';
 require_once dirname(__FILE__) . '/LogFileHandler.php';
 require_once dirname(__FILE__) . '/LogExaminer.php';
 
+$start_time = microtime(true);
+
 //print_r($argv);
 
 if (!$argv[1]) { 
@@ -25,6 +27,9 @@ else {
 	// Streaming in from STDIN
 	$logexam->importFile(STDIN);
 }
+
+$end_time = microtime(true);
+echo "Time taken: ", ($end_time - $start_time), "\n";
 
 
 function _exit_usage() {
