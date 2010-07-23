@@ -44,7 +44,6 @@ class LogStore {
 		$stm->execute(array(
 			':ip_id'	    => $ipAddressId,
 			':date'				=> $entry->date,
-			':timezone'		=> $entry->timezone,
 			':method'			=> $entry->method,
 			':url_id' 		=> $urlId,
 			':http' 			=> $entry->http,
@@ -266,7 +265,6 @@ class LogStore {
 CREATE TABLE IF NOT EXISTS `log_entry` (
 	ip_id				INTEGER NOT NULL,
 	date				DATETIME NOT NULL,
-	timezone		VARCHAR(5),
 	method			VARCHAR(8) NOT NULL,
 	url_id			INTEGER NOT NULL,
 	http				VARCHAR(8),
@@ -284,9 +282,9 @@ SQL;
 
 		$schema['entry']['insert'] = <<<SQL
 INSERT INTO `log_entry`
-(ip_id, date, timezone, method, url_id, http, status, length, referrer, user_agent)
+(ip_id, date, method, url_id, http, status, length, referrer, user_agent)
 VALUES
-(:ip_id, :date, :timezone, :method, :url_id, :http, :status, :length, :referrer, :user_agent)
+(:ip_id, :date, :method, :url_id, :http, :status, :length, :referrer, :user_agent)
 SQL;
 
 		/******************************************************************

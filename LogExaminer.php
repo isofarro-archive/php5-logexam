@@ -50,6 +50,7 @@ class LogExaminer {
 				//echo $line;
 				
 				$entry = $this->parse($line);
+				//print_r($entry);
 				if (empty($entry->url)) {
 					printf("\nERROR line %08d: %s", $lineno, $line);
 				}
@@ -57,7 +58,6 @@ class LogExaminer {
 					$this->add($entry);
 					$entries++;
 				}
-				//print_r($entry);
 				
 				//if ($count>2) {
 				//	break;
@@ -110,19 +110,18 @@ class LogExaminer {
 	
 	public function parse($line) {
 		$components = (object)NULL;
-		if (preg_match("/^(\d+\.\d+\.\d+\.\d+) (\S+) (\S+) \[(\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2}) ([^\]]+)\] \"(\w+) (.+) (HTTP\/1\.\d+)\" (\d+) (\d+|-) \"([^\"]*)\" \"([^\"]*)\"/", $line, $matches)) {
+		if (preg_match("/^(\d+\.\d+\.\d+\.\d+) (\S+) (\S+) \[(\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2} [^\]]+)\] \"(\w+) (.+) (HTTP\/1\.\d+)\" (\d+) (\d+|-) \"([^\"]*)\" \"([^\"]*)\"/", $line, $matches)) {
 			## Apache combined log format
 			//print_r($matches);
 			$components->ipAddress = $matches[1];
-			$components->date      = $matches[4];
-			$components->timezone  = $matches[5];
-			$components->method    = $matches[6];
-			$components->url       = $matches[7];
-			$components->http      = $matches[8];
-			$components->status    = $matches[9];
-			$components->length    = $matches[10];
-			$components->referrer  = $matches[11];
-			$components->userAgent = $matches[12];
+			$components->date      = date('Y-m-d H:i:s', strtotime($matches[4]));
+			$components->method    = $matches[5];
+			$components->url       = $matches[6];
+			$components->http      = $matches[7];
+			$components->status    = $matches[8];
+			$components->length    = $matches[9];
+			$components->referrer  = $matches[10];
+			$components->userAgent = $matches[11];
 		}
 		else {
 			//echo "\n{$line}\n";
