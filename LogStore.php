@@ -76,12 +76,16 @@ class LogStore {
 	protected function _getOneRow($tableKey, $queryKey, $params, $hydrate=false) {
 		// TODO: Check in cache first
 		//echo "DEBUG: $tableKey,$queryKey,"; print_r($params);
+		$cachedRow = $this->_getCachedRow($tableKey, $params);
+		if (!empty($cachedRow)) {
+			return $cachedRow;
+		}
 		
 		$stm = $this->_prepareStatement($tableKey, $queryKey);
 		$stm->execute($params);
 
 		if (!$this->_checkPdoError($stm) && ($row = $stm->fetchObject())) {
-			// TODO: Cache row
+			$this->_cacheRow($tableKey, $row);
 			return $row;
 		}
 		return NULL;
@@ -126,12 +130,27 @@ class LogStore {
 	* Row Caches
 	*
 	******************************************************************/
-	protected function _cacheRow($tableKey, $queryKey, $rowKey, $row) {
-		
+	protected function _cacheRow($tableKey, $row) {
+		$keys = $this->_schema[$tableKey]['cache_by'];
+		if (!empty($keys)) {
+			foreach($keys as $key) {
+				$this->_rowCache[$tableKey][$key][$row->{$key}] = $row;
+			}
+		}
 	}
 	
-	protected function _getCachedRow($tableKey, $queryKey, $rowKey) {
-		
+	protected function _getCachedRow($tableKey, $rowKey) {
+		list($key, $value) = each($rowKey);
+		$key = substr($key, 1);
+		$cacheKeys = $this->_schema[$tableKey]['cache_by'];
+		if (
+				!empty($cacheKeys) && in_array($key, $cacheKeys)
+				&& !empty($this->_rowCache[$tableKey][$key][$value])
+		) {
+			//echo '@';
+			return $this->_rowCache[$tableKey][$key][$value];
+		}
+		return NULL;
 	}
 	
 	protected function _delCacheRow($tableKey, $queryKey=false, $rowKey=false) {
@@ -256,7 +275,7 @@ SQL;
 		* IP Address table
 		*
 		******************************************************************/
-		$scheme['ip_address']['cache_by'] = array('ip_address');
+		$schema['ip_address']['cache_by'] = array('address', 'id');
 		$schema['ip_address']['create']   = <<<SQL
 CREATE TABLE IF NOT EXISTS `ip_address` (
 	id			INTEGER PRIMARY KEY,
@@ -279,6 +298,8 @@ SELECT id, address
 FROM `ip_address`
 WHERE address = :address ;
 SQL;
+
+
 
 
 		return $schema;
