@@ -290,6 +290,8 @@ CREATE TABLE IF NOT EXISTS `log_entry` (
 	referrer				VARCHAR(255),
 	user_agent_id		INTEGER NOT NULL,
 	
+	PRIMARY KEY (ip_id, date, url_id)
+	
 	FOREIGN KEY (ip_id) REFERENCES `ip_address` (id)
 		ON DELETE CASCADE
 	FOREIGN KEY (url_id) REFERENCES `urls` (id)
@@ -300,7 +302,7 @@ CREATE TABLE IF NOT EXISTS `log_entry` (
 SQL;
 
 		$schema['entry']['insert'] = <<<SQL
-INSERT INTO `log_entry`
+INSERT OR IGNORE INTO `log_entry`
 (ip_id, date, method, url_id, http, status, length, referrer, user_agent_id)
 VALUES
 (:ip_id, :date, :method, :url_id, :http, :status, :length, :referrer, :user_agent_id)

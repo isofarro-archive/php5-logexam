@@ -54,14 +54,11 @@ class LogExaminer {
 				if (empty($entry->url)) {
 					printf("\nERROR line %08d: %s", $lineno, $line);
 				}
-				elseif($this->is_acceptable($entry)) {
-					$this->add($entry);
+				elseif($this->is_acceptable($entry) && $this->add($entry)) {
 					$entries++;
 				}
 				
-				//if ($count>2) {
-				//	break;
-				//}
+				//if ($count>10) { break; }
 				
 				if ($count>1000) {
 					echo '.'; $count=0;
@@ -105,7 +102,7 @@ class LogExaminer {
 	}
 	
 	public function add($entry) {
-		$this->datasource->add($entry);
+		return $this->datasource->add($entry);
 	}
 	
 	public function parse($line) {
