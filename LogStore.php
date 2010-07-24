@@ -38,19 +38,21 @@ class LogStore {
 		//echo "DEBUG: IP Address Id: $ipAddressId\n";
 		$urlId 			 = $this->getUrlId($entry->url);
 		//echo "DEBUG: URL id: $urlId\n";
+		$userAgentId = $this->getUserAgentId($entry->userAgent);
+		//echo "DEBUG: URL id: $urlId\n";
 
 
 		$stm = $this->_prepareStatement('entry', 'insert');
 		$stm->execute(array(
-			':ip_id'	    => $ipAddressId,
-			':date'				=> $entry->date,
-			':method'			=> $entry->method,
-			':url_id' 		=> $urlId,
-			':http' 			=> $entry->http,
-			':status' 		=> $entry->status,
-			':length' 		=> $entry->length,
-			':referrer'		=> $entry->referrer,
-			':user_agent' => $entry->userAgent
+			':ip_id'	    		=> $ipAddressId,
+			':date'						=> date('Y-m-d H:i:s', $entry->date),
+			':method'					=> $entry->method,
+			':url_id' 				=> $urlId,
+			':http'			 			=> $entry->http,
+			':status' 				=> $entry->status,
+			':length' 				=> $entry->length,
+			':referrer'				=> $entry->referrer,
+			':user_agent_id' 	=> $userAgentId
 		));
 
 		return !$this->_isPdoError($stm) && ($stm->rowCount());
@@ -79,6 +81,21 @@ class LogStore {
 		}
 		else {
 			$stm = $this->_prepareStatement('urls', 'insert');
+			$stm->execute($params);
+			return $this->_db->lastInsertId();
+		}
+	}
+
+
+	public function getUserAgentId($userAgent) {
+		$params = array(':user_agent' => $userAgent);
+		$row = $this->_getOneRow('user_agent', 'getByUserAgent', $params);
+		
+		if ($row) {
+			return $row->id;
+		}
+		else {
+			$stm = $this->_prepareStatement('user_agent', 'insert');
 			$stm->execute($params);
 			return $this->_db->lastInsertId();
 		}
@@ -263,28 +280,30 @@ class LogStore {
 
 			$schema['entry']['create'] = <<<SQL
 CREATE TABLE IF NOT EXISTS `log_entry` (
-	ip_id				INTEGER NOT NULL,
-	date				DATETIME NOT NULL,
-	method			VARCHAR(8) NOT NULL,
-	url_id			INTEGER NOT NULL,
-	http				VARCHAR(8),
-	status			INTEGER,
-	length			INTEGER,
-	referrer		VARCHAR(255),
-	user_agent	VARCHAR(255) NOT NULL,
+	ip_id						INTEGER NOT NULL,
+	date						DATETIME NOT NULL,
+	method					VARCHAR(8) NOT NULL,
+	url_id					INTEGER NOT NULL,
+	http						VARCHAR(8),
+	status					INTEGER,
+	length					INTEGER,
+	referrer				VARCHAR(255),
+	user_agent_id		INTEGER NOT NULL,
 	
 	FOREIGN KEY (ip_id) REFERENCES `ip_address` (id)
 		ON DELETE CASCADE
 	FOREIGN KEY (url_id) REFERENCES `urls` (id)
+		ON DELETE CASCADE
+	FOREIGN KEY (user_agent_id) REFERENCES `user_agent` (id)
 		ON DELETE CASCADE
 );
 SQL;
 
 		$schema['entry']['insert'] = <<<SQL
 INSERT INTO `log_entry`
-(ip_id, date, method, url_id, http, status, length, referrer, user_agent)
+(ip_id, date, method, url_id, http, status, length, referrer, user_agent_id)
 VALUES
-(:ip_id, :date, :method, :url_id, :http, :status, :length, :referrer, :user_agent)
+(:ip_id, :date, :method, :url_id, :http, :status, :length, :referrer, :user_agent_id)
 SQL;
 
 		/******************************************************************
@@ -343,6 +362,34 @@ SQL;
 SELECT id, url
 FROM `urls`
 WHERE url = :url ;
+SQL;
+
+
+	/******************************************************************
+	*
+	* User Agent table
+	*
+	******************************************************************/
+		$schema['user_agent']['cache_by'] = array();
+		$schema['user_agent']['create']   = <<<SQL
+CREATE TABLE IF NOT EXISTS `user_agent` (
+	id					INTEGER PRIMARY KEY,
+	user_agent 	TEXT NOT NULL
+);
+SQL;
+
+
+		$schema['user_agent']['insert'] = <<<SQL
+INSERT OR IGNORE INTO `user_agent`
+(id, user_agent)
+VALUES
+(NULL, :user_agent)
+SQL;
+
+		$schema['user_agent']['getByUserAgent'] = <<<SQL
+SELECT id, user_agent
+FROM `user_agent`
+WHERE user_agent = :user_agent ;
 SQL;
 
 

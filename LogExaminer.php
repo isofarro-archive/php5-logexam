@@ -114,7 +114,7 @@ class LogExaminer {
 			## Apache combined log format
 			//print_r($matches);
 			$components->ipAddress = $matches[1];
-			$components->date      = date('Y-m-d H:i:s', strtotime($matches[4]));
+			$components->date      = strtotime($matches[4]);
 			$components->method    = $matches[5];
 			$components->url       = $matches[6];
 			$components->http      = $matches[7];
