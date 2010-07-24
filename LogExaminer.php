@@ -7,6 +7,7 @@ class LogExaminer {
 	
 	public function __construct($dataset) {
 		$this->_setDataset($dataset);
+		$this->_createEvents();
 	}
 	
 	public function import($filenames, $filter=NULL) {
@@ -54,7 +55,7 @@ class LogExaminer {
 				if (empty($entry->url)) {
 					printf("\nERROR line %08d: %s", $lineno, $line);
 				}
-				elseif($this->is_acceptable($entry) && $this->add($entry)) {
+				elseif($this->isAcceptable($entry) && $this->add($entry)) {
 					$entries++;
 				}
 				
@@ -76,7 +77,7 @@ class LogExaminer {
 		}
 	}
 	
-	public function is_acceptable($entry) {
+	public function isAcceptable($entry) {
 		// TODO: Convert into an event listener based approach
 		if (preg_match('/\.(\w+)$/', $entry->url, $matches)) {
 			$extension = strtolower($matches[1]);
@@ -97,6 +98,14 @@ class LogExaminer {
 				case 'rss':
 					return false; break;
 			}
+		}
+		
+		if ($this->filter) {
+			$isAcceptable = $this->filter->isAcceptable($entry);
+			if ($isAcceptable===true || $isAcceptable===false) {
+				return $isAcceptable;
+			}
+			return false;
 		}
 		return true;
 	}
@@ -133,6 +142,22 @@ class LogExaminer {
 	protected function _setDataset($dataset) {
 		$this->dataset    = $dataset;
 		$this->datasource = new LogStore($dataset);
+		
+		$datasetFile = dirname(__FILE__) . '/datasets/' . $dataset . '.php';
+		if (file_exists($datasetFile)) {
+			require_once($datasetFile);
+			if ($filter) {
+				//echo "INFO: Filter defined!\n";
+				$this->filter = $filter;
+			}
+		}
+	}
+	
+	protected function _createEvents() {
+		LogEvents::addEvents(array(
+			'log_import:add',
+			'log_import:new_file'
+		));
 	}
 	
 }
