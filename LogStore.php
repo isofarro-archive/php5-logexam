@@ -123,7 +123,7 @@ class LogStore {
 			':ip_id'	=> $entry->ip_id,
 			':date'		=> $entry_time
 		);
-		$row = $this->_getOneRow('session', 'getByEntry', $params);
+		$row = $this->_getOneRow('session', 'getRecentByEntry', $params);
 		
 		if ($row) {
 			return $row;
@@ -357,6 +357,9 @@ CREATE TABLE IF NOT EXISTS `log_entry` (
 	FOREIGN KEY (userAgent_id) REFERENCES `user_agent` (id)
 		ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS 'log_entry_1' 
+	on `log_entry` (date);
 SQL;
 
 		$schema['entry']['insert'] = <<<SQL
@@ -500,7 +503,7 @@ WHERE
 id = :id
 SQL;
 
-		$schema['session']['getByEntry'] = <<<SQL
+		$schema['session']['getRecentByEntry'] = <<<SQL
 SELECT id, ip_id, start_time, end_time
 FROM `session`
 WHERE 
