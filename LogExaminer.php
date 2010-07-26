@@ -77,41 +77,82 @@ class LogExaminer {
 		}
 	}
 	
+	public function postProcessing() {
+		echo "Post Processing:\n";
+		// Collate sessions
+		$entries = $this->getEntries();
+		//$entries = array_slice($entries, 0, 5);
+		
+		$count = 0;
+		$lines = 0;
+		foreach($entries as $entry) {
+			if (!$entry->session_id) {
+				$count++; //echo "[$count]";
+				//echo "Entry: "; print_r($entry);
+				$session = $this->getSession($entry);
+				$entry->session_id = $session->id;
+				//echo "Session id: $session->id\n";
+				$this->updateEntrySession($entry);
+				
+				if ($count>1000) {
+					echo '#';
+					$count=0;
+				}
+			}			
+		}
+		echo "\n$count rows processed.\n";
+	}
+	
 	public function isAcceptable($entry) {
 		// TODO: Convert into an event listener based approach
-		if (preg_match('/\.(\w+)$/', $entry->url, $matches)) {
-			$extension = strtolower($matches[1]);
-			switch($extension) {
-				case 'css':
-				case 'js':
-				case 'gif':
-				case 'jpg':
-				case 'jpeg':
-				case 'png':
-				case 'ico':
-				case 'bmp':
-				case 'swf':
-					return false; break;
-				case 'rdf':
-				case 'necho':
-				case 'atom':
-				case 'rss':
-					return false; break;
-			}
-		}
-		
 		if ($this->filter) {
-			$isAcceptable = $this->filter->isAcceptable($entry);
+			$isAcceptable = $this->filter->filter($entry);
 			if ($isAcceptable===true || $isAcceptable===false) {
 				return $isAcceptable;
 			}
 			return false;
 		}
-		return true;
+		else {
+			if (preg_match('/\.(\w+)$/', $entry->url, $matches)) {
+				$extension = strtolower($matches[1]);
+				switch($extension) {
+					case 'css':
+					case 'js':
+					case 'gif':
+					case 'jpg':
+					case 'jpeg':
+					case 'png':
+					case 'ico':
+					case 'bmp':
+					case 'swf':
+						return false; break;
+					case 'rdf':
+					case 'necho':
+					case 'atom':
+					case 'rss':
+						return false; break;
+				}
+			}
+			return true;
+		}
 	}
 	
 	public function add($entry) {
 		return $this->datasource->add($entry);
+	}
+	
+	public function getEntries() {
+		return $this->datasource->getAllEntries();
+	}
+	
+	public function updateEntrySession($entry) {
+		return $this->datasource->updateEntrySession($entry);
+	}
+ 	
+	public function getSession($entry) {
+		$session = $this->datasource->getSessionByEntry($entry);
+		
+		return $session;
 	}
 	
 	public function parse($line) {

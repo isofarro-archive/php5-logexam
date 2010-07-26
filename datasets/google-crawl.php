@@ -7,7 +7,7 @@
 
 class GoogleLogFilter extends LogFilterBase {
 	
-	public function isAcceptable($entry) {
+	public function filter($entry) {
 		if (preg_match('/Googlebot/', $entry->userAgent)) {
 			//echo '$';
 			return true;

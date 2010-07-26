@@ -29,6 +29,9 @@ class LogStore {
 	}
 
 
+	public function getAllEntries() {
+		return $this->_getAllRows('entry');
+	}
 	
 	public function add($entry) {
 		$this->_initDbConnection();
@@ -41,6 +44,7 @@ class LogStore {
 		$userAgentId = $this->getUserAgentId($entry->userAgent);
 		//echo "DEBUG: URL id: $urlId\n";
 
+		$sessionId   = 0;
 
 		$stm = $this->_prepareStatement('entry', 'insert');
 		$stm->execute(array(
@@ -52,9 +56,22 @@ class LogStore {
 			':status' 				=> $entry->status,
 			':length' 				=> $entry->length,
 			':referrer'				=> $entry->referrer,
-			':user_agent_id' 	=> $userAgentId
+			':userAgent_id' 	=> $userAgentId,
+			':session_id'			=> $sessionId
 		));
 
+		return !$this->_isPdoError($stm) && ($stm->rowCount());
+	}
+	
+	public function updateEntrySession($entry) {
+		$stm = $this->_prepareStatement('entry', 'updateSessionId');
+		$stm->execute(array(
+			':ip_id'      => $entry->ip_id,
+			':date'       => $entry->date,
+			':url_id'     => $entry->url_id,
+			':session_id' => $entry->session_id
+		));
+		
 		return !$this->_isPdoError($stm) && ($stm->rowCount());
 	}
 	
@@ -101,6 +118,49 @@ class LogStore {
 		}
 	}
 
+
+	public function getSessionByEntry($entry) {
+		$entry_time = date('Y-m-d H:i:s', $entry->date);
+		$params = array(
+			':ip_id'	=> $entry->ip_id,
+			':date'		=> $entry_time
+		);
+		$row = $this->_getOneRow('session', 'getByEntry', $params);
+		
+		if ($row) {
+			return $row;
+		}
+		else {
+			# Create a new Session
+			$session = (object)array(
+				'ip_id'      => $entry->ip_id,
+				'start_time' => $entry->date,
+				'end_time'   => $entry->date
+			);
+			return $this->addSession($session);
+		}
+	}
+	
+	public function addSession($session) {
+		$stm = $this->_prepareStatement('session', 'insert');
+		$stm->execute(array(
+			'ip_id'       => $session->ip_id,
+			':start_time' => $session->start_time,
+			':end_time'		=> $session->end_time
+		));
+		$session_id = $this->_db->lastInsertId();
+		return $this->getSessionById($session_id);
+	}
+	
+	public function getSessionById($id) {
+		$params = array(':id' => $id);
+		$row = $this->_getOneRow('session', 'getById', $params);
+
+		if ($row) {
+			return $row;
+		}
+		return NULL;
+	}
 	
 	##
 	## Private methods - orm helper methods
@@ -124,8 +184,11 @@ class LogStore {
 		return NULL;
 	}
 	
-	protected function _getAllRows($stm, $hydrate=false) {
-		// TODO: use query key instead of passing the statement
+	protected function _getAllRows($tableKey, $queryKey='getAll', $params=array(), $hydrate=false) {
+		
+		$stm = $this->_prepareStatement($tableKey, $queryKey);
+		$stm->execute($params);
+		
 		if ($this->_checkPdoError($stm)) {
 			return NULL;
 		}
@@ -288,7 +351,8 @@ CREATE TABLE IF NOT EXISTS `log_entry` (
 	status					INTEGER,
 	length					INTEGER,
 	referrer				VARCHAR(255),
-	user_agent_id		INTEGER NOT NULL,
+	userAgent_id		INTEGER NOT NULL,
+	session_id			INTEGER,
 	
 	PRIMARY KEY (ip_id, date, url_id)
 	
@@ -296,16 +360,32 @@ CREATE TABLE IF NOT EXISTS `log_entry` (
 		ON DELETE CASCADE
 	FOREIGN KEY (url_id) REFERENCES `urls` (id)
 		ON DELETE CASCADE
-	FOREIGN KEY (user_agent_id) REFERENCES `user_agent` (id)
+	FOREIGN KEY (userAgent_id) REFERENCES `user_agent` (id)
 		ON DELETE CASCADE
 );
 SQL;
 
 		$schema['entry']['insert'] = <<<SQL
 INSERT OR IGNORE INTO `log_entry`
-(ip_id, date, method, url_id, http, status, length, referrer, user_agent_id)
+(ip_id, date, method, url_id, http, status, length, referrer, userAgent_id, session_id)
 VALUES
-(:ip_id, :date, :method, :url_id, :http, :status, :length, :referrer, :user_agent_id)
+(:ip_id, :date, :method, :url_id, :http, :status, :length, :referrer, :userAgent_id, :session_id)
+SQL;
+
+		$schema['entry']['updateSessionId'] = <<<SQL
+UPDATE `log_entry`
+SET session_id = :session_id
+WHERE 
+		ip_id  = :ip_id
+AND	date   = :date
+AND url_id = :url_id
+SQL;
+
+		$schema['entry']['getAll'] = <<<SQL
+SELECT
+ip_id, date, method, url_id, http, status, length, referrer, userAgent_id, session_id
+FROM `log_entry`
+ORDER BY date ASC;
 SQL;
 
 		/******************************************************************
@@ -392,6 +472,57 @@ SQL;
 SELECT id, user_agent
 FROM `user_agent`
 WHERE user_agent = :user_agent ;
+SQL;
+
+
+	/******************************************************************
+	*
+	* Session table
+	*
+	******************************************************************/
+		$schema['session']['cache_by'] = array();
+		$schema['session']['create']   = <<<SQL
+CREATE TABLE IF NOT EXISTS `session` (
+	id					INTEGER PRIMARY KEY,
+	ip_id				INTEGER NOT NULL,
+	start_time	DATETIME NOT NULL,
+	end_time		DATETIME NOT NULL,
+
+	FOREIGN KEY (ip_id) REFERENCES `ip_address` (id)
+		ON DELETE CASCADE
+);
+SQL;
+
+
+		$schema['session']['insert'] = <<<SQL
+INSERT OR IGNORE INTO `session`
+(id, ip_id, start_time, end_time)
+VALUES
+(NULL, :ip_id, :start_time, :end_time)
+SQL;
+
+		$schema['session']['update'] = <<<SQL
+UPDATE `session`
+start_time 	= :start_time
+end_time 		= :end_time
+WHERE
+id = :id
+SQL;
+
+		$schema['session']['getByEntry'] = <<<SQL
+SELECT id, ip_id, start_time, end_time
+FROM `session`
+WHERE 
+		ip_id = :ip_id
+AND start_time > :date
+ORDER BY end_time DESC
+LIMIT 0, 1;
+SQL;
+
+		$schema['session']['getById'] = <<<SQL
+SELECT id, ip_id, start_time, end_time
+FROM `session`
+WHERE id = :id;
 SQL;
 
 
