@@ -132,21 +132,16 @@ class LogStore {
 		}
 		else {
 			# Create a new Session
-			$session = (object)array(
-				'ip_id'      => $entry->ip_id,
-				'start_time' => $entry->date,
-				'end_time'   => $entry->date
-			);
-			return $this->addSession($session);
+			return $this->createNewSession($entry);
 		}
 	}
 	
-	public function addSession($session) {
+	public function createNewSession($entry) {
 		$stm = $this->_prepareStatement('session', 'insert');
 		$stm->execute(array(
-			'ip_id'       => $session->ip_id,
-			':start_time' => $session->start_time,
-			':end_time'		=> $session->end_time
+			'ip_id'       => $entry->ip_id,
+			':start_time' => $entry->date,
+			':end_time'		=> $entry->date
 		));
 		$session_id = $this->_db->lastInsertId();
 		return $this->getSessionById($session_id);

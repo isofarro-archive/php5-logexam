@@ -5,6 +5,8 @@ class LogExaminer {
 	var $datasource;
 	var $filters;
 	
+	const SESSION_EXPIRY = 1800; // 30 minutes
+	
 	public function __construct($dataset) {
 		$this->_setDataset($dataset);
 		$this->_createEvents();
@@ -87,7 +89,7 @@ class LogExaminer {
 		$lines = 0;
 		foreach($entries as $entry) {
 			if (!$entry->session_id) {
-				$count++; //echo "[$count]";
+				$count++; $lines++;
 				//echo "Entry: "; print_r($entry);
 				$session = $this->getSession($entry);
 				$entry->session_id = $session->id;
@@ -100,7 +102,7 @@ class LogExaminer {
 				}
 			}			
 		}
-		echo "\n$count rows processed.\n";
+		echo "\n$lines rows processed.\n";
 	}
 	
 	public function isAcceptable($entry) {
@@ -151,6 +153,14 @@ class LogExaminer {
  	
 	public function getSession($entry) {
 		$session = $this->datasource->getSessionByEntry($entry);
+
+		$entryTs = strtotime($entry->date);
+		$lastTs  = strtotime($session->end_time);
+		$diff    = $entryTs - $lastTs;
+		if ($diff > self::SESSION_EXPIRY) {
+			//echo "\t[$entry->date|$session->end_time|$diff]\n";
+			$session = $this->datasource->createNewSession($entry);
+		}
 		
 		return $session;
 	}
