@@ -66,9 +66,7 @@ class LogStore {
 	public function updateEntrySession($entry) {
 		$stm = $this->_prepareStatement('entry', 'updateSessionId');
 		$stm->execute(array(
-			':ip_id'      => $entry->ip_id,
-			':date'       => $entry->date,
-			':url_id'     => $entry->url_id,
+			':id'         => $entry->id,
 			':session_id' => $entry->session_id
 		));
 		
@@ -338,6 +336,7 @@ class LogStore {
 
 			$schema['entry']['create'] = <<<SQL
 CREATE TABLE IF NOT EXISTS `log_entry` (
+	id							INTEGER PRIMARY KEY,
 	ip_id						INTEGER NOT NULL,
 	date						DATETIME NOT NULL,
 	method					VARCHAR(8) NOT NULL,
@@ -349,7 +348,7 @@ CREATE TABLE IF NOT EXISTS `log_entry` (
 	userAgent_id		INTEGER NOT NULL,
 	session_id			INTEGER,
 	
-	PRIMARY KEY (ip_id, date, url_id)
+	UNIQUE (ip_id, date, url_id),
 	
 	FOREIGN KEY (ip_id) REFERENCES `ip_address` (id)
 		ON DELETE CASCADE
@@ -362,23 +361,20 @@ SQL;
 
 		$schema['entry']['insert'] = <<<SQL
 INSERT OR IGNORE INTO `log_entry`
-(ip_id, date, method, url_id, http, status, length, referrer, userAgent_id, session_id)
+(id, ip_id, date, method, url_id, http, status, length, referrer, userAgent_id, session_id)
 VALUES
-(:ip_id, :date, :method, :url_id, :http, :status, :length, :referrer, :userAgent_id, :session_id)
+(NULL, :ip_id, :date, :method, :url_id, :http, :status, :length, :referrer, :userAgent_id, :session_id)
 SQL;
 
 		$schema['entry']['updateSessionId'] = <<<SQL
 UPDATE `log_entry`
 SET session_id = :session_id
-WHERE 
-		ip_id  = :ip_id
-AND	date   = :date
-AND url_id = :url_id
+WHERE id = :id
 SQL;
 
 		$schema['entry']['getAll'] = <<<SQL
 SELECT
-ip_id, date, method, url_id, http, status, length, referrer, userAgent_id, session_id
+id, ip_id, date, method, url_id, http, status, length, referrer, userAgent_id, session_id
 FROM `log_entry`
 ORDER BY date ASC;
 SQL;
