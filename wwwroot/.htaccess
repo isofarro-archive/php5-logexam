@@ -1,0 +1,5 @@
+
+RewriteEngine On
+#RewriteRule ^alice.html phpinfo.php
+RewriteRule ^.+/ /index.php
+
