@@ -107,7 +107,7 @@ class LogExaminer {
 	
 	public function isAcceptable($entry) {
 		// TODO: Convert into an event listener based approach
-		if ($this->filter) {
+		if (!empty($this->filter)) {
 			$isAcceptable = $this->filter->filter($entry);
 			if ($isAcceptable===true || $isAcceptable===false) {
 				return $isAcceptable;

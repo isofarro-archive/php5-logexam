@@ -10,8 +10,8 @@ $start_time = microtime(true);
 
 //print_r($argv);
 
-if (!$argv[1]) { 
-	exit_usage();
+if (empty($argv[1])) { 
+	_exit_usage();
 }
 
 
@@ -41,6 +41,7 @@ function _exit_usage() {
 	echo <<<USAGE
 	usage:	cli_import 'dataset' [file]
 	or	cli_import 'dataset' < zcat [file.gz] 
+
 USAGE;
 	exit;
 }
