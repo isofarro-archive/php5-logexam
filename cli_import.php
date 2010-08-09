@@ -34,7 +34,7 @@ $end_time = microtime(true);
 echo "Time taken: ", ($end_time - $start_time), "\n";
 
 // TODO: post-processing
-$logexam->postProcessing();
+//$logexam->postProcessing();
 
 
 function _exit_usage() {

@@ -15,12 +15,21 @@ class LogExaminer {
 	public function import($filenames, $filter=NULL) {
 		//print_r($filenames); 
 		foreach($filenames as $filename) {
-			$this->importFile($filename, $filter);
+			$filedata = $this->importFile($filename, $filter);
+			$this->addFile($filedata);
 		}
 		return;
 	}
 		
 	public function importFile($file, $filter=NULL) {
+		$filedata = (object)array(
+			'filepath' => '',
+			'domain'   => '',
+			'minDate'  => 0,
+			'maxDate'  => 0,
+			'entries'  => 0
+		);
+		
 		$filename = 'STDIN';
 		if ($filter) {
 			$this->setFilter($filter);
@@ -28,6 +37,7 @@ class LogExaminer {
 		
 		if (is_string($file) && is_file($file)) {
 			$filename = $file;
+			$filedata->filepath = realpath($filename);
 			
 			if (preg_match('/\.gz$/', $filename)) {
 				$handle = new GzipLogFileHandle();
@@ -38,6 +48,9 @@ class LogExaminer {
 
 			$handle->open($filename, 'r');
 			$file = $handle->getHandle();
+		}
+		else {
+			$filedata->filepath = $filename . '-' . time();
 		}
 		
 		if ($file && is_resource($file)) {
@@ -57,12 +70,21 @@ class LogExaminer {
 				if (empty($entry->url)) {
 					printf("\nERROR line %08d: %s", $lineno, $line);
 				}
-				elseif($this->isAcceptable($entry) && $this->add($entry)) {
-					$entries++;
+				else {
+					if ($filedata->minDate > $entry->date || !$filedata->minDate) {
+						$filedata->minDate = $entry->date;
+					}
+					if ($filedata->maxDate < $entry->date || !$filedata->maxDate) {
+						$filedata->maxDate = $entry->date;
+					}
+
+					// TODO: Replace this with a modular filter
+					if($this->isAcceptable($entry) && $this->add($entry)) {
+						$entries++;
+					}
 				}
 				
 				//if ($count>10) { break; }
-				
 				if ($count>1000) {
 					echo '.'; $count=0;
 				}
@@ -77,6 +99,9 @@ class LogExaminer {
 		if ($handle && is_resource($file)) {
 			$handle->close();
 		}
+		
+		$filedata->entries = $lineno;
+		return $filedata;
 	}
 	
 	public function postProcessing() {
@@ -137,6 +162,10 @@ class LogExaminer {
 			}
 			return true;
 		}
+	}
+	
+	public function addFile($filedata) {
+		return $this->datasource->addFile($filedata);
 	}
 	
 	public function add($entry) {

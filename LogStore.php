@@ -29,6 +29,22 @@ class LogStore {
 	}
 
 
+	public function addFile($file) {
+		$this->_initDbConnection();
+
+		$stm = $this->_prepareStatement('logfiles', 'insert');
+		$stm->execute(array(
+			':filepath' => $file->filepath,
+			':domain'   => $file->domain,
+			':minDate'  => date('Y-m-d H:i:s', $file->minDate),
+			':maxDate'  => date('Y-m-d H:i:s', $file->maxDate),
+			':entries'  => $file->entries
+		));
+
+		return !$this->_isPdoError($stm) && ($this->_db->lastInsertId());
+	}
+
+
 	public function getAllEntries() {
 		return $this->_getAllRows('entry');
 	}
@@ -327,6 +343,63 @@ class LogStore {
 	
 	protected function _initDbSchema() {
 			$schema = array();
+
+
+			/******************************************************************
+			*
+			* logfiles table
+			*
+			******************************************************************/
+			$schema['logfiles']['create'] = <<<SQL
+CREATE TABLE IF NOT EXISTS `logfiles` (
+	id							INTEGER PRIMARY KEY,
+	filepath				VARCHAR(255) UNIQUE,
+	domain					VARCHAR(255),
+	minDate					DATETIME NOT NULL,
+	maxDate					DATETIME NOT NULL,
+	entries					INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS 'logfiles_1' 
+	on `logfiles` (filepath);
+CREATE INDEX IF NOT EXISTS 'logfiles_2' 
+	on `logfiles` (minDate);
+CREATE INDEX IF NOT EXISTS 'logfiles_3' 
+	on `logfiles` (maxDate);
+	
+SQL;
+
+		$schema['logfiles']['insert'] = <<<SQL
+INSERT OR REPLACE INTO `logfiles`
+(id, filepath, domain, minDate, maxDate, entries)
+VALUES
+(NULL, :filepath, :domain, :minDate, :maxDate, :entries)
+SQL;
+
+		$schema['logfiles']['getAll'] = <<<SQL
+SELECT
+id, filepath, domain, minDate, maxDate, entries
+FROM `logfiles`
+ORDER BY minDate ASC;
+SQL;
+
+		$schema['logfiles']['getByPath'] = <<<SQL
+SELECT
+id, filepath, domain, minDate, maxDate, entries
+FROM `logfiles`
+WHERE filepath = :filepath
+LIMIT 0,1;
+SQL;
+
+		$schema['logfiles']['getByDateRange'] = <<<SQL
+SELECT
+id, filepath, domain, minDate, maxDate, entries
+FROM `logfiles`
+WHERE
+		minDate <= :upperLimit
+AND	maxDate >= :lowerLimit
+SQL;
+
 
 			/******************************************************************
 			*
