@@ -32,3 +32,10 @@ Example code
 			'ignore_ext' => array('css','js','gif','png','jpg','swf')
 		)
 	);
+
+
+To-do list
+----------
+
+* Populate session data
+* split URL into path and query string component fields -- URL in the urls table, query string in the log_entry table

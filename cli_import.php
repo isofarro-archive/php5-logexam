@@ -17,7 +17,9 @@ if (empty($argv[1])) {
 
 $dataset = $argv[1];
 $logexam = new LogExaminer($dataset);
+
 // TODO: Set filters and other listeners here
+
 
 if ($argv[2]) {
 	echo "Reading list of files\n";
@@ -34,7 +36,7 @@ $end_time = microtime(true);
 echo "Time taken: ", ($end_time - $start_time), "\n";
 
 // TODO: post-processing
-//$logexam->postProcessing();
+$logexam->postProcessing();
 
 
 function _exit_usage() {

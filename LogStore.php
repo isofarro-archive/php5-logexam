@@ -134,7 +134,8 @@ class LogStore {
 
 
 	public function getSessionByEntry($entry) {
-		$entry_time = date('Y-m-d H:i:s', $entry->date);
+		//$entry_time = date('Y-m-d H:i:s', $entry->date);
+		$entry_time = $entry->date;
 		$params = array(
 			':ip_id'	=> $entry->ip_id,
 			':date'		=> $entry_time
