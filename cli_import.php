@@ -14,10 +14,10 @@ if (empty($argv[1])) {
 	_exit_usage();
 }
 
-
 $dataset = $argv[1];
 $logexam = new LogExaminer($dataset);
 
+/**** Bypass to get to post processing ****
 // TODO: Set filters and other listeners here
 
 
@@ -34,6 +34,7 @@ else {
 
 $end_time = microtime(true);
 echo "Time taken: ", ($end_time - $start_time), "\n";
+**** End Bypass ****/
 
 // TODO: post-processing
 $logexam->postProcessing();

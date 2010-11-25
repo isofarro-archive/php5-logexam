@@ -108,7 +108,9 @@ class LogExaminer {
 		echo "Post Processing:\n";
 		// Collate sessions
 		$entries = $this->getEntries();
-		//$entries = array_slice($entries, 0, 5);
+		echo "Number of entries: " . count($entries) . "\n";
+		//$entries = array_slice($entries, 0, 30000);
+		//echo "Number of entries: " . count($entries) . "\n";
 		
 		$count = 0;
 		$lines = 0;
@@ -182,10 +184,13 @@ class LogExaminer {
  	
 	public function getSession($entry) {
 		$session = $this->datasource->getSessionByEntry($entry);
+		//echo "Session: "; print_r($session);
 
 		$entryTs = strtotime($entry->date);
 		$lastTs  = strtotime($session->end_time);
 		$diff    = $entryTs - $lastTs;
+
+		//echo "[$diff:" . self::SESSION_EXPIRY . "]\n";
 		if ($diff > self::SESSION_EXPIRY) {
 			//echo "\t[$entry->date|$session->end_time|$diff]\n";
 			$session = $this->datasource->createNewSession($entry);
@@ -196,7 +201,7 @@ class LogExaminer {
 	
 	public function parse($line) {
 		$components = (object)NULL;
-		if (preg_match("/^(\d+\.\d+\.\d+\.\d+) (\S+) (\S+) \[(\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2} [^\]]+)\] \"(\w+) (.+) (HTTP\/1\.\d+)\" (\d+) (\d+|-) (\d+ \S )?\"([^\"]*)\" \"([^\"]*)\"/", $line, $matches)) {
+		if (preg_match("/^(\d+\.\d+\.\d+\.\d+) (\S+) (\S+) \[(\d{2}\/\w{3}\/\d{4}:\d{2}:\d{2}:\d{2} [^\]]+)\] \"(\w+) (.+) (HTTP\/1\.\d+)\" (\d+) (\d+|-)([^\"]+)\"([^\"]*)\" \"([^\"]*)\"/", $line, $matches)) {
 			## Apache combined log format
 			//print_r($matches);
 			$components->ipAddress = $matches[1];
@@ -206,8 +211,8 @@ class LogExaminer {
 			$components->http      = $matches[7];
 			$components->status    = $matches[8];
 			$components->length    = $matches[9];
-			$components->referrer  = $matches[10];
-			$components->userAgent = $matches[11];
+			$components->referrer  = $matches[11];
+			$components->userAgent = $matches[12];
 		}
 		else {
 			//echo "\n{$line}\n";

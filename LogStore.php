@@ -46,6 +46,7 @@ class LogStore {
 
 
 	public function getAllEntries() {
+	        $this->_initDbConnection();
 		return $this->_getAllRows('entry');
 	}
 	
@@ -140,8 +141,11 @@ class LogStore {
 			':ip_id'	=> $entry->ip_id,
 			':date'		=> $entry_time
 		);
+		//echo "Params: "; print_r($params);
+
 		$row = $this->_getOneRow('session', 'getRecentByEntry', $params);
-		
+		//print_r($row);
+
 		if ($row) {
 			return $row;
 		}
@@ -582,7 +586,7 @@ SELECT id, ip_id, start_time, end_time
 FROM `session`
 WHERE 
 		ip_id = :ip_id
-AND start_time > :date
+AND start_time <= :date
 ORDER BY end_time DESC
 LIMIT 0, 1;
 SQL;
